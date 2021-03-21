@@ -10,6 +10,7 @@ import random
 # - tails
 # - make board a class?
 # - better way of talking to the buttons
+# - choose tack heading? currently heading only changes when head to wind
 #########################
 
 # compass point: vector
@@ -91,6 +92,18 @@ class player:
         self.heading = 0
         self.legCounter = 0
         board[self.pos[0]][self.pos[1]][1] = 'boat1'
+
+
+    def change_tack(self, newTack):
+        self.tack = newTack
+        if self.heading == wind:
+            if newTack == 'P':
+                self.heading = (self.heading - 1) % 8
+            else:
+                self.heading = (self.heading + 1) % 8
+        print(self.tack)
+
+
 
     def move(self, point):
         self.heading = point
@@ -194,14 +207,34 @@ def valid_path(start, end):
 def valid_btns(boat): #! pass current player
     validBtns = [[], []]     # (compass points, sail buttons)
     if boat.legCounter <= legs:
-        validBtns[0] = valid_points(wind, boat)
-        validBtns[1] = [0, 1]
+        if board[boat.pos[0]][boat.pos[1]][2] == 'blanketed':    #? best place for this?
+            print("blanketed")
+            for btn in compassRose:
+                btn.visible = False
+                btn.enabled = False
+            for btn in sailControls:
+                btn.visible = False
+                btn.enabled = False
+            skipTurn = button('blanketed: skip turn', consoleOrigin[0], consoleOrigin[1] + 0.5 * winSize[1] - 25, (consoleWidth - 5, 50))
+            pygame.draw.rect(window, colours['grey'], (consoleOrigin[0], consoleOrigin[1], consoleWidth, winSize[1]))
+            skipTurn.draw(window)
+            pygame.display.update()
+        else:
+            if boat.heading == wind:
+                validBtns = [[], [2,3]]
+            else:
+                validBtns[0] = valid_points(wind, boat)
+                validBtns[1] = [0, 1]
+                if boat.tack == 'P':
+                    validBtns[1].append(2)
+                else:
+                    validBtns[1].append(3)
     return validBtns
 
 
 
-class button:
 
+class button:
     def __init__(self, text, x, y, size):
         self.text = text
         self.x = x
@@ -210,17 +243,19 @@ class button:
         self.height = size[1]
         self.colour = colours['btnDisabled']
         self.enabled = True
+        self.visible = True
 
     def draw(self, window):
-        if self.enabled:
-            self.colour = colours['btnEnabled']
-        else:
-            self.colour = colours['btnDisabled']
-        pygame.draw.rect(window, self.colour, (self.x, self.y, self.width, self.height))
-        font = pygame.font.SysFont("padaukbook", 40)
-        text = font.render(self.text, True, (255, 255, 255))
-        window.blit(text, (self.x + round(self.width) / 2 - round(text.get_width() / 2),
-                           self.y + round(self.height / 2) - round(text.get_height() / 2)))
+        if self.visible:
+            if self.enabled:
+                self.colour = colours['btnEnabled']
+            else:
+                self.colour = colours['btnDisabled']
+            pygame.draw.rect(window, self.colour, (self.x, self.y, self.width, self.height))
+            font = pygame.font.SysFont("padaukbook", 40)
+            text = font.render(self.text, True, (255, 255, 255))
+            window.blit(text, (self.x + round(self.width) / 2 - round(text.get_width() / 2),
+                               self.y + round(self.height / 2) - round(text.get_height() / 2)))
 
     def click(self, pos):
         x1 = pos[0]
@@ -308,10 +343,10 @@ compassRose = [button("N", offsetRoseOrigin[0], offsetRoseOrigin[1] - roseOffset
                ]
 
 
-sailControls = [button("spinn", consoleOrigin[0] + 100, winSize[1] - 55, (100, 50)),
-                button("puff", consoleOrigin[0] + 100, winSize[1] - 165, (100, 50)),
+sailControls = [button("spin.", consoleOrigin[0] + 100, winSize[1] - 55, (100, 50)),
+                button("puff", consoleOrigin[0] + 205, winSize[1] - 55, (100, 50)),
                 button("port", consoleOrigin[0] + 100, winSize[1] - 110, (100, 50)),
-                button("starboard", consoleOrigin[0] + 205, winSize[1] - 110, (100, 50)),
+                button("star.", consoleOrigin[0] + 205, winSize[1] - 110, (100, 50)),
                 ]
 
 
@@ -378,7 +413,6 @@ def roll_dice():
             wind_shift(wind, +1)
         else:
             legs = outcome
-    print(legs)
     dice.draw(window)
 
 
@@ -421,6 +455,7 @@ draw_board()
 draw_wind()
 blankets()
 # roll_dice()
+draw_console()
 while run:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -451,14 +486,11 @@ while run:
                 else:
                     spinn.text = 'raise'
                 spinn.draw(window)
-            if sailControls[1].click(clickPos):
+            if sailControls[2].click(clickPos):
                 p.legCounter += 1
-                if p.tack == 'P':
-                    p.tack = 'S'
-                    sailControls[1].text = 'S'
-                else:
-                    p.tack = 'P'
-                    sailControls[1].text = 'P'
-                sailControls[1].draw(window)
+                p.change_tack('S')
+            if sailControls[3].click(clickPos):
+                p.legCounter += 1
+                p.change_tack('P')
             draw_console()
         pygame.display.update()
