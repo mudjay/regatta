@@ -77,7 +77,9 @@ colours = {'sea': (80, 180, 255),
            'tail': (0, 200, 0),
            'blanketed': (64, 144, 204)
            }
-assets = {'windArrow': [(0, -64), (15, -40), (15, 40), (-15, 40), (-15, -40)]
+assets = {'windArrow': [(0, -64), (15, -40), (15, 40), (-15, 40), (-15, -40)],
+          'boat': [(0, -50), (20, -15), (20, 40), (8, 50), (-8, 50), (-20, 40), (-20, -15)],
+          'bouy': [(-54, 46), (46, 46), (48, 24), (33, 23), (33, -42), (-26, -48), (-36, 17), (-51, 16)]
           }
 
 
@@ -136,6 +138,16 @@ class player:
         # board[self.pos] = 'sea'
         # self.pos = tuple(map(lambda x, y: x + y, self.pos, tuple([sailPoint * i for i in card2vec[dir]])))
         # board[self.pos] = 'boat1'
+
+
+def draw_asset(asset, centre, scale, rotation, colour, lineWidth):
+    imgOut = []
+    rotImg = []
+    rotMatrix = np.array([[np.cos(rotation), -np.sin(rotation)],  # rotation matrix
+                          [np.sin(rotation), np.cos(rotation)]])
+    for vertex in asset:
+        imgOut.append(np.add(rotMatrix.dot(vertex) * scale, centre))
+    pygame.draw.polygon(window, colour, imgOut, width=lineWidth)
 
 
 def move(start, wind, point, player):
@@ -301,6 +313,7 @@ def blankets():
 def draw_board():
     for x in range(boardSize[0]):
         for y in range(boardSize[1]):
+            gridCentre = ((x + 0.5)*blockSize + boardOffset, (y + 0.5)*blockSize + boardOffset)
             # draw terrain
             rect = pygame.Rect(x * blockSize + boardOffset +1 , y * blockSize + boardOffset + 1, blockSize-2, blockSize-2)
             pygame.draw.rect(window, colours[board[x][y][0]], rect)
@@ -314,8 +327,12 @@ def draw_board():
                 pass
 
             try:    # draw boats
-                rect = pygame.Rect(x * blockSize + boardOffset +4, y * blockSize + boardOffset + 4, blockSize-8, blockSize-8)
-                pygame.draw.rect(window, colours[board[x][y][1]], rect)
+                if board[x][y][1] == 'bouy':
+                    draw_asset(assets['bouy'], gridCentre, bouyScale, 0, colours[board[x][y][1]], 0)
+                else:
+                   draw_asset(assets['boat'], gridCentre, boatScale, p.heading*np.pi/4, colours[board[x][y][1]], 0)
+                # rect = pygame.Rect(x * blockSize + boardOffset +4, y * blockSize + boardOffset + 4, blockSize-8, blockSize-8)
+                # pygame.draw.rect(window, colours[board[x][y][1]], rect)
             except Exception as e:
                 # print(e)
                 pass
@@ -419,7 +436,7 @@ def roll_dice():
 # main
 global window
 pygame.init()
-window = pygame.display.set_mode((winSize[0], winSize[1]))
+window = pygame.display.set_mode(winSize)
 pygame.display.set_caption("master")
 
 window.fill(colours['grey'])
@@ -447,6 +464,10 @@ pygame.draw.circle(window, (135, 135, 135), roseOrigin, roseOffset - 5)
 
 dice = button("roll", consoleOrigin[0], consoleOrigin[1], (50, 50))
 dice.draw(window)
+
+
+boatScale = 0.17
+bouyScale = 0.12
 
 run = True
 wind = 0
