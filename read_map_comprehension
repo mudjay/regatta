@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Mar 28 11:10:57 2021
+
+@author: jeremy
+"""
+
+import csv
+
+filname = 'smallMap.csv' # my testing map
+global boardSize #! do something about this
+
+## terrainKey = {'0': 'sea', '1': 'land', '2': 'buoy'                  }
+
+## boardSize = (3 ,5) - should be set by create map
+def create_map(file):
+    with open(file, newline='') as f:
+        reader = csv.reader(f)
+        terrain = list(reader)
+    return terrain
+    
+def read_board(terrain=[[1,1,1],[0,0,0],[0,2,0]], terrainKey=None ):
+    boardSize = (len(terrain[0]), len(terrain))
+    if terrainKey==None:
+        terrainKey={'0':'sea','1': 'land', '2':'buoy'} # being careful of default argeuments
+    board = [ 
+              [ 
+                ['sea','buoy', None] if terrain[j][i] == '2'                    
+                else [terrainKey[ terrain[j][i] ], None, None]
+                    for j in range( boardSize[1])  
+              ]
+                          for i in range( boardSize[0])     
+            ]
+    return boardSize, board
+
+def flat( board) : return [ p for row in board for p in row ] 
+def unflat( boardsize, blist) : return [ [ blist[ i*boardsize[1] + j ] 
+              for j in range(boardsize[1]) ]
+                  for i in range(boardsize[0]) ]
+
+
+terra = create_map(filname)
+boardSize, board = read_board( terra, None)  #  and using default terrainKey carefully
