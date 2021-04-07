@@ -1,5 +1,6 @@
 import socket
 import pickle
+from common import Message
 
 class Network:
     def __init__(self):
@@ -7,18 +8,21 @@ class Network:
         self.server = "192.168.0.102"
         self.port = 5555
         self.addr = (self.server, self.port)
-        self.connect()
+        self.connected = False
 
     def connect(self):
         try:
             self.client.connect(self.addr)
-            return self.client.recv(2048).decode()
-        except:
-            pass
+            self.connected, clientID = pickle.loads(self.client.recv(2048))
+            return clientID
+        except Exception as e:
+            print(e)
 
-    def send(self, data):
+    def send(self, messType, data):
         try:
-            self.client.send(str.encode(data))
-            #return self.client.recv(2048).decode()
+            self.client.sendall(pickle.dumps(Message(messType, data)))
+            if messType == 'get':
+                return pickle.loads(self.client.recv(2048*4)).read()
+            # send a confirmation? is this all handled by sendall?
         except socket.error as e:
             print(e)
